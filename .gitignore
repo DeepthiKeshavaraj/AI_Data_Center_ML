@@ -1,0 +1,33 @@
+# Virtual environment
+.venv/
+
+# Python cache
+__pycache__/
+*.py[cod]
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Raw datasets
+thermal/data/raw/
+
+# Processed datasets
+thermal/data/processed/
+
+# OS files
+.DS_Store
+
+# IDE settings
+.vscode/
+
+# Environment files
+*.env
+
+# Model files
+*.pkl
+*.joblib
+*.keras
+*.h5
+
+# Temporary files
+*.tmp
