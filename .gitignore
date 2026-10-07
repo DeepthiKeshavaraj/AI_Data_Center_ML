@@ -9,10 +9,11 @@ __pycache__/
 .ipynb_checkpoints/
 
 # Raw datasets
-thermal/data/raw/
+data/raw/
 
 # Processed datasets
-thermal/data/processed/
+data/processed/
+data/interim/
 
 # OS files
 .DS_Store
