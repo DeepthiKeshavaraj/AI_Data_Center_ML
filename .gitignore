@@ -14,6 +14,10 @@ data/raw/
 # Processed datasets
 data/processed/
 data/interim/
+data/standardized/
+
+# Generated reports
+reports/
 
 # OS files
 .DS_Store
