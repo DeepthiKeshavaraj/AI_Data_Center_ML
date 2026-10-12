@@ -1,4 +1,5 @@
 from pathlib import Path
+import joblib
 
 import pandas as pd
 
@@ -21,7 +22,9 @@ from sklearn.preprocessing import OneHotEncoder, StandardScaler
 # --------------------------------------------------
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 DATA_DIR = PROJECT_ROOT / "data" / "processed" / "security"
+MODEL_DIR = PROJECT_ROOT / "models" / "security"
 REPORT_DIR = PROJECT_ROOT / "reports" / "security_model"
+MODEL_DIR.mkdir(parents=True, exist_ok=True)
 REPORT_DIR.mkdir(parents=True, exist_ok=True)
 
 TRAIN_FILE = DATA_DIR / "unsw_nb15_UNSW_NB15_training-set(in)_ml_ready.csv"
@@ -206,6 +209,10 @@ def main():
         REPORT_DIR / "test_predictions.csv",
         index=False,
     )
+
+    model_path = MODEL_DIR / "security_random_forest.joblib"
+    joblib.dump(model, model_path)
+    print(f"Model saved to: {model_path}")
 
     print(f"\nReports saved to: {REPORT_DIR}")
     print("Baseline training and evaluation complete.")

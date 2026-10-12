@@ -33,5 +33,9 @@ reports/
 *.keras
 *.h5
 
+# Node / Frontend
+node_modules/
+dist/
+
 # Temporary files
 *.tmp
