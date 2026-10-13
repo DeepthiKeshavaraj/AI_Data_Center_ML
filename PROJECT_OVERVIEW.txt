@@ -118,37 +118,43 @@ C. THERMAL MANAGEMENT & RISK FORECASTING (ARCHITECTURE DOCUMENTED)
 
 3. SOFTWARE ARCHITECTURE (FULL-STACK PROTOTYPE)
 
-A. BACKEND (Python 3.12 + FastAPI + Pydantic v2)
+A. BACKEND (Python 3.12 + FastAPI + Pydantic v2 + PyMongo + Argon2id)
    Located in: backend/
-   * app/main.py: App creation, CORS for dev origins, global exception handlers.
-   * app/api/endpoints.py: REST routing for 16 endpoints.
+   * app/main.py: App creation, dynamic CORS for production/dev origins, global exception handlers.
+   * app/api/endpoints.py: REST routing for 24 endpoints (including authentication and simulation).
    * app/services/:
-       - model_loader.py    : Singleton registry tracking real artifact existence.
-       - security_service.py: Preprocessing & live inference for Random Forest.
-       - workload_service.py: Machine spec parser & heuristic allocation engine.
-       - thermal_service.py : Thermal feature metadata & threshold definitions.
-       - dataset_service.py : Allowlist-controlled dataset sampler & summarizer.
-   * app/schemas/: Strict Pydantic models for payload validation and types.
-   * tests/test_api.py: 11 automated test cases (pytest) covering health, models,
-     predictions, presets, validation errors, simulation, and dataset sampling.
-     ==> 100% test pass rate in 4.44s.
+       - db.py                 : MongoDB Atlas connection pool, unique email index, and mongomock testing fallback.
+       - auth_service.py       : RFC 9106 Argon2id password hashing, session management, and HttpOnly cookies.
+       - model_loader.py       : Singleton registry tracking real artifact existence.
+       - security_service.py   : Preprocessing & live inference for Random Forest.
+       - workload_service.py   : Machine spec parser & heuristic allocation engine.
+       - thermal_service.py    : Thermal feature metadata & threshold definitions.
+       - simulation_service.py : Cross-domain dependency engine, presets, and rule evaluation.
+       - dataset_service.py    : Allowlist-controlled dataset sampler & summarizer.
+   * app/schemas/: Strict Pydantic models for authentication, users, models, simulation, and datasets.
+   * tests/: 28 automated test cases (pytest) covering health, authentication, Argon2id hashing,
+     sessions, models, inference, presets, cross-domain propagation, and dataset sampling.
+     ==> 100% test pass rate in 10.73s.
 
 B. FRONTEND (React 19 + TypeScript + Vite 8 + Tailwind CSS v4)
    Located in: frontend/
    * Design: Enterprise dark navy (#0A0E17), subtle slate borders (#1E293B),
      electric cyan (#06B6D4) and emerald (#10B981) accents.
-   * 5 Integrated Views:
+   * 6 Integrated Views:
        1. Overview Dashboard: KPI statistics, component readiness, data-flow diagram.
-       2. Security Intelligence: Live inference form with 1-click authentic presets
+       2. Impact Simulator: Interactive 3-domain dependency network (Security <-> Workload <-> Thermal)
+          with live presets, DPI compute overhead, Joule heat dissipation, safety downclocking,
+          before-and-after metric audits, and dynamic operational response recommendations.
+       3. Security Intelligence: Live inference form with 1-click authentic presets
           (Standard HTTP, OSPF Reconnaissance, DNS Query), probability meters,
           feature importance breakdown, and confusion matrix.
-       3. Workload & Allocation: Regression architecture, offline benchmark comparisons,
+       4. Workload & Allocation: Regression architecture, offline benchmark comparisons,
           and interactive cluster allocation simulation on 1,897 Alibaba nodes.
-       4. Thermal Intelligence: User-provided scenario telemetry explorer, 30-min
+       5. Thermal Intelligence: User-provided scenario telemetry explorer, 30-min
           horizon lag architecture, and exploratory threshold table.
-       5. Evaluation & Datasets: Verified metrics comparison and Live Disk Sample
+       6. Evaluation & Datasets: Verified metrics comparison and Live Disk Sample
           Drawer rendering genuine CSV records from disk.
-   * Production Build: tsc -b && vite build ==> built in 2.30s with 0 errors.
+   * Production Build: tsc -b && vite build ==> built in 6.40s with 0 errors.
 
 
 4. DATASET CATALOG (STANDARDIZED BENCHMARKS ON DISK)
@@ -191,24 +197,27 @@ Run Test Suites:
   - Highlight the 88.36% test accuracy and 82.49% unseen generalization score.
   - Explain the multi-domain architecture: Workload -> Thermal -> Security -> Decision.
 
-0:45 - 1:45 | Network Security Threat Intelligence
+0:45 - 1:30 | Integrated Impact Simulator (The Core Innovation)
+  - Open "Impact Simulator" tab.
+  - Show the 3-Node Connected Diagram: Security <-> Workload <-> Thermal.
+  - Click preset "Security Incident & DPI Overhead":
+    * Shows Random Forest model classifying OSPF probe as ATTACK (100% prob).
+    * Highlights Security -> Workload effect: DPI adds +150 cores inspection demand.
+  - Click preset "Workload Surge & Heat Rise":
+    * Shows demand surging to 920 cores, pushing outlet temp >60°C.
+    * Highlights Workload -> Thermal effect: Joule heating elevates temperature.
+  - Click preset "Thermal Emergency & Throttling":
+    * Ambient inlet at 36°C triggers thermal ceiling breach.
+    * Highlights Thermal -> Workload effect: Capacity throttled by -42%, forcing backlog!
+  - Review Before-and-After Metrics table, Chronological Event Trace, and dynamic recommendations.
+
+1:30 - 2:15 | Dedicated Security & ML Baseline
   - Open "Security Intelligence" tab.
-  - Click preset "OSPF Reconnaissance Probe" (authentic UNSW-NB15 record #243).
-  - Click "Execute ML Model Prediction": Shows immediate ATTACK with 100% confidence.
-  - Click preset "Standard HTTP Web Traffic": Shows NORMAL with 52% probability.
-  - Point out the Feature Importance chart (flow duration 22.7%, source bytes 19.3%)
-    and the Confusion Matrix showing 95.3% attack recall.
+  - Demonstrate live single-flow inference on presets (Standard HTTP vs OSPF Probe).
+  - Point out Feature Importance (Flow duration 22.7%, Source bytes 19.3%) and 95.3% recall.
 
-1:45 - 2:30 | Workload & Cluster Allocation Simulation
-  - Open "Workload & Allocation" tab.
-  - Explain the persistence baseline benchmark concept.
-  - Request 128 CPU cores and 512 GB memory using "Balanced Distribution" across 8 nodes.
-  - Run simulation: Show how tasks are placed across real Alibaba PAI server specs
-    while respecting the 85% safety headroom per node.
-
-2:30 - 3:00 | Thermal Management & Dataset Catalog
-  - Open "Thermal Intelligence": Explain 30-minute lag horizon & exploratory thresholds.
-  - Open "Evaluation & Datasets": Click "Inspect Sample Records" on UNSW-NB15 or
-    Alibaba PAI to demonstrate live disk data integration without fabrications.
+2:15 - 3:00 | Workload Allocation & Real Dataset Catalog
+  - Open "Workload & Allocation": Run allocation simulation across 1,897 Alibaba nodes.
+  - Open "Evaluation & Datasets": Inspect live disk records from UNSW-NB15 and Alibaba CSVs.
     
 END OF REPORT

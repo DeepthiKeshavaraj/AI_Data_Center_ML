@@ -1,5 +1,6 @@
 import React from 'react';
-import { Cpu, CheckCircle2, AlertTriangle, RefreshCw, Activity } from 'lucide-react';
+import { Cpu, CheckCircle2, AlertTriangle, RefreshCw, Activity, LogOut, User as UserIcon } from 'lucide-react';
+import { User } from '../types';
 
 interface NavbarProps {
   backendHealthy: boolean | null;
@@ -7,6 +8,8 @@ interface NavbarProps {
   totalModelsCount: number;
   onRefresh: () => void;
   loading: boolean;
+  currentUser?: User | null;
+  onLogout?: () => void;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
@@ -15,6 +18,8 @@ export const Navbar: React.FC<NavbarProps> = ({
   totalModelsCount,
   onRefresh,
   loading,
+  currentUser,
+  onLogout,
 }) => {
   return (
     <header className="border-b border-slate-800 bg-slate-950 sticky top-0 z-40 shadow-md">
@@ -68,6 +73,31 @@ export const Navbar: React.FC<NavbarProps> = ({
               <span className="text-slate-400">Connecting...</span>
             )}
           </div>
+
+          {/* User Profile Pill & Logout */}
+          {currentUser && (
+            <div className="flex items-center space-x-2 pl-2 border-l border-slate-800">
+              <div className="flex items-center space-x-2 px-2.5 py-1 rounded-lg bg-slate-900 border border-slate-800 text-xs">
+                <div className="w-6 h-6 rounded-full bg-gradient-to-tr from-purple-600 to-cyan-500 flex items-center justify-center font-bold text-white text-[11px] shadow-sm">
+                  {currentUser.name ? currentUser.name.charAt(0).toUpperCase() : 'U'}
+                </div>
+                <div className="hidden md:block text-left leading-tight">
+                  <div className="font-semibold text-white truncate max-w-[100px]">{currentUser.name}</div>
+                  <div className="text-[10px] text-slate-400">Researcher</div>
+                </div>
+              </div>
+
+              {onLogout && (
+                <button
+                  onClick={onLogout}
+                  className="p-1.5 rounded-lg bg-slate-900 hover:bg-rose-950/40 border border-slate-800 hover:border-rose-500/40 text-slate-400 hover:text-rose-400 transition cursor-pointer"
+                  title="Sign Out"
+                >
+                  <LogOut className="w-4 h-4" />
+                </button>
+              )}
+            </div>
+          )}
 
           {/* Refresh Button */}
           <button

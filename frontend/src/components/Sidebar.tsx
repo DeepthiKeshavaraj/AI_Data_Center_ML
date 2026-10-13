@@ -7,9 +7,10 @@ import {
   BarChart3,
   Server,
   Layers,
+  Activity,
 } from 'lucide-react';
 
-export type TabType = 'overview' | 'workload' | 'thermal' | 'security' | 'metrics';
+export type TabType = 'overview' | 'simulator' | 'security' | 'workload' | 'thermal' | 'metrics';
 
 interface SidebarProps {
   currentTab: TabType;
@@ -28,6 +29,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
       label: 'Overview Dashboard',
       description: 'System health, components & overview',
       icon: LayoutDashboard,
+    },
+    {
+      id: 'simulator' as TabType,
+      label: 'Impact Simulator',
+      description: 'Cross-domain dependency & impact modeling',
+      icon: Activity,
+      badge: 'Interactive',
+      badgeColor: 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/30',
     },
     {
       id: 'security' as TabType,

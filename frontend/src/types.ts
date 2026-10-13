@@ -212,3 +212,101 @@ export interface DatasetSampleResponse {
   sample_rows: Record<string, any>[];
   preview_count: number;
 }
+
+export interface SimulationPresetInfo {
+  id: string;
+  name: string;
+  description: string;
+  initiating_domain: string;
+  defaults: Record<string, any>;
+}
+
+export interface SimulationRunRequest {
+  preset: string;
+  base_cpu_demand: number;
+  cluster_capacity: number;
+  suspicious_traffic_intensity: number;
+  ambient_inlet_temp: number;
+  throttling_threshold: number;
+  inspection_overhead_factor: number;
+  throttling_penalty_rate?: number;
+  max_throttling_limit?: number;
+  flow_sample?: SecurityPredictRequest | null;
+}
+
+export interface MetricItem {
+  label: string;
+  initial_value: number;
+  final_value: number;
+  unit: string;
+  category: 'real_ml' | 'simulation_assumption' | 'rule_policy';
+  category_label: string;
+  change_pct?: number | null;
+}
+
+export interface SimulationEventItem {
+  step: number;
+  timestamp_offset_sec: number;
+  domain: 'security' | 'workload' | 'thermal' | 'policy';
+  severity: 'info' | 'warning' | 'danger';
+  title: string;
+  description: string;
+}
+
+export interface SimulationRecommendationItem {
+  id: string;
+  domain: string;
+  priority: 'low' | 'medium' | 'high' | 'critical';
+  action: string;
+  rationale: string;
+}
+
+export interface DomainStatus {
+  state: 'normal' | 'warning' | 'critical';
+  headline: string;
+  details: string;
+  primary_metric: string;
+}
+
+export interface SimulationRunResponse {
+  scenario_name: string;
+  initiating_domain: string;
+  security_ml_used: boolean;
+  security_result?: SecurityPredictResponse | null;
+  security_explanation: string;
+  initial_state: Record<string, any>;
+  final_state: Record<string, any>;
+  metrics: MetricItem[];
+  domain_statuses: {
+    security: DomainStatus;
+    workload: DomainStatus;
+    thermal: DomainStatus;
+  };
+  triggered_rules: string[];
+  event_log: SimulationEventItem[];
+  recommendations: SimulationRecommendationItem[];
+  is_simulation: boolean;
+  disclaimer: string;
+}
+
+export interface User {
+  user_id: string;
+  name: string;
+  email: string;
+  created_at?: string | null;
+}
+
+export interface AuthResponse {
+  status: string;
+  message: string;
+  user?: User | null;
+}
+
+export interface DbStatusResponse {
+  connected: boolean;
+  is_mock: boolean;
+  uri_configured: boolean;
+  database_name: string;
+  engine: string;
+}
+

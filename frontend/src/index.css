@@ -32,3 +32,14 @@
 ::-webkit-scrollbar-thumb:hover {
   background: #475569;
 }
+
+@keyframes flowDash {
+  to {
+    stroke-dashoffset: -24;
+  }
+}
+
+.flow-active {
+  stroke-dasharray: 6 6;
+  animation: flowDash 1s linear infinite;
+}

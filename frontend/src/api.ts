@@ -10,51 +10,111 @@ import {
   MetricsResponse,
   DatasetSummary,
   DatasetSampleResponse,
+  SimulationPresetInfo,
+  SimulationRunRequest,
+  SimulationRunResponse,
+  User,
+  AuthResponse,
+  DbStatusResponse,
 } from './types';
 
-const BASE_URL = '/api';
+// Dynamic base URL configurable via VITE_API_BASE_URL environment variable for deployment
+const BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api';
+
+/**
+ * Common fetch helper ensuring credentials: 'include' for HttpOnly cookie sessions
+ */
+async function apiFetch(endpoint: string, options: RequestInit = {}) {
+  const url = `${BASE_URL}${endpoint}`;
+  const response = await fetch(url, {
+    ...options,
+    credentials: 'include',
+    headers: {
+      'Content-Type': 'application/json',
+      ...(options.headers || {}),
+    },
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => null);
+    const message = errorData?.detail || errorData?.message || `Request failed with status ${response.status}`;
+    const err = new Error(message);
+    (err as any).status = response.status;
+    throw err;
+  }
+
+  return response.json();
+}
+
+// --- Authentication Endpoints ---
+
+export async function registerUser(payload: {
+  name: string;
+  email: string;
+  password: string;
+  confirm_password: string;
+}): Promise<AuthResponse> {
+  return apiFetch('/auth/register', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function loginUser(payload: {
+  email: string;
+  password: string;
+}): Promise<AuthResponse> {
+  return apiFetch('/auth/login', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function fetchCurrentUser(): Promise<User> {
+  return apiFetch('/auth/me', {
+    method: 'GET',
+  });
+}
+
+export async function logoutUser(): Promise<{ status: string; message: string }> {
+  return apiFetch('/auth/logout', {
+    method: 'POST',
+  });
+}
+
+export async function fetchDbStatus(): Promise<DbStatusResponse> {
+  return apiFetch('/auth/db-status', {
+    method: 'GET',
+  });
+}
+
+// --- Core Intelligence & ML Endpoints ---
 
 export async function fetchHealth() {
-  const res = await fetch(`${BASE_URL}/health`);
-  if (!res.ok) throw new Error(`Health check failed: ${res.statusText}`);
-  return res.json();
+  return apiFetch('/health', { method: 'GET' });
 }
 
 export async function fetchOverview(): Promise<OverviewResponse> {
-  const res = await fetch(`${BASE_URL}/overview`);
-  if (!res.ok) throw new Error(`Overview fetch failed: ${res.statusText}`);
-  return res.json();
+  return apiFetch('/overview', { method: 'GET' });
 }
 
 export async function fetchModelsStatus(): Promise<ModelsStatusResponse> {
-  const res = await fetch(`${BASE_URL}/models/status`);
-  if (!res.ok) throw new Error(`Models status fetch failed: ${res.statusText}`);
-  return res.json();
+  return apiFetch('/models/status', { method: 'GET' });
 }
 
 export async function fetchSecurityMetadata(): Promise<SecurityMetadataResponse> {
-  const res = await fetch(`${BASE_URL}/security/metadata`);
-  if (!res.ok) throw new Error(`Security metadata fetch failed: ${res.statusText}`);
-  return res.json();
+  return apiFetch('/security/metadata', { method: 'GET' });
 }
 
 export async function predictSecurity(payload: SecurityPredictRequest): Promise<SecurityPredictResponse> {
-  const res = await fetch(`${BASE_URL}/security/predict`, {
+  return apiFetch('/security/predict', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload),
   });
-  if (!res.ok) {
-    const errorData = await res.json().catch(() => null);
-    throw new Error(errorData?.detail || `Prediction error (${res.status})`);
-  }
-  return res.json();
 }
 
 export async function fetchWorkloadMetadata(): Promise<WorkloadMetadataResponse> {
-  const res = await fetch(`${BASE_URL}/workload/metadata`);
-  if (!res.ok) throw new Error(`Workload metadata fetch failed: ${res.statusText}`);
-  return res.json();
+  return apiFetch('/workload/metadata', { method: 'GET' });
 }
 
 export async function simulateWorkloadAllocation(payload: {
@@ -64,38 +124,35 @@ export async function simulateWorkloadAllocation(payload: {
   allocation_strategy: string;
   max_servers_to_use: number;
 }): Promise<WorkloadAllocationResponse> {
-  const res = await fetch(`${BASE_URL}/workload/allocate`, {
+  return apiFetch('/workload/allocate', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload),
   });
-  if (!res.ok) {
-    const err = await res.json().catch(() => null);
-    throw new Error(err?.detail || `Allocation error (${res.status})`);
-  }
-  return res.json();
 }
 
 export async function fetchThermalMetadata(): Promise<ThermalMetadataResponse> {
-  const res = await fetch(`${BASE_URL}/thermal/metadata`);
-  if (!res.ok) throw new Error(`Thermal metadata fetch failed: ${res.statusText}`);
-  return res.json();
+  return apiFetch('/thermal/metadata', { method: 'GET' });
 }
 
 export async function fetchMetrics(): Promise<MetricsResponse> {
-  const res = await fetch(`${BASE_URL}/metrics`);
-  if (!res.ok) throw new Error(`Metrics fetch failed: ${res.statusText}`);
-  return res.json();
+  return apiFetch('/metrics', { method: 'GET' });
 }
 
 export async function fetchDatasets(): Promise<DatasetSummary[]> {
-  const res = await fetch(`${BASE_URL}/datasets/summary`);
-  if (!res.ok) throw new Error(`Datasets fetch failed: ${res.statusText}`);
-  return res.json();
+  return apiFetch('/datasets/summary', { method: 'GET' });
 }
 
 export async function fetchDatasetSample(id: string, limit = 10): Promise<DatasetSampleResponse> {
-  const res = await fetch(`${BASE_URL}/datasets/${id}/sample?limit=${limit}`);
-  if (!res.ok) throw new Error(`Dataset sample fetch failed: ${res.statusText}`);
-  return res.json();
+  return apiFetch(`/datasets/${id}/sample?limit=${limit}`, { method: 'GET' });
+}
+
+export async function fetchSimulationPresets(): Promise<SimulationPresetInfo[]> {
+  return apiFetch('/simulation/presets', { method: 'GET' });
+}
+
+export async function runSimulation(payload: SimulationRunRequest): Promise<SimulationRunResponse> {
+  return apiFetch('/simulation/run', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  });
 }

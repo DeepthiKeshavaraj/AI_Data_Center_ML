@@ -257,6 +257,22 @@ export const OverviewPage: React.FC<OverviewPageProps> = ({ onNavigate }) => {
             </p>
           </div>
         </div>
+
+        <div className="mt-6 pt-5 border-t border-slate-800/80 flex flex-col sm:flex-row items-center justify-between gap-4 bg-cyan-950/20 p-4 rounded-xl border border-cyan-500/20">
+          <div>
+            <h4 className="text-sm font-bold text-white mb-0.5">Explore Cross-Domain Impact Simulator</h4>
+            <p className="text-xs text-slate-300 m-0">
+              Interact with coupled cyber-physical feedback loops across security intrusion spikes, compute load, and thermal downclocking.
+            </p>
+          </div>
+          <button
+            onClick={() => onNavigate('simulator')}
+            className="shrink-0 flex items-center space-x-2 py-2 px-4 rounded-lg bg-cyan-500 hover:bg-cyan-400 text-slate-950 text-xs font-bold transition shadow-md shadow-cyan-500/20 cursor-pointer"
+          >
+            <span>Launch Impact Simulator</span>
+            <ArrowRight className="w-4 h-4" />
+          </button>
+        </div>
       </div>
     </div>
   );
