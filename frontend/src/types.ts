@@ -300,6 +300,7 @@ export interface AuthResponse {
   status: string;
   message: string;
   user?: User | null;
+  token?: string | null;
 }
 
 export interface DbStatusResponse {
