@@ -9,10 +9,14 @@ __pycache__/
 .ipynb_checkpoints/
 
 # Raw datasets
-thermal/data/raw/
+data/raw/
 
 # Processed datasets
-thermal/data/processed/
+data/processed/
+data/interim/
+
+# Generated reports
+reports/
 
 # OS files
 .DS_Store
@@ -20,14 +24,24 @@ thermal/data/processed/
 # IDE settings
 .vscode/
 
-# Environment files
+# Environment and Secret files
+.env
+.env.*
+!.env.example
 *.env
+*.pem
+*.key
+*.cert
 
 # Model files
 *.pkl
 *.joblib
 *.keras
 *.h5
+
+# Node / Frontend
+node_modules/
+dist/
 
 # Temporary files
 *.tmp

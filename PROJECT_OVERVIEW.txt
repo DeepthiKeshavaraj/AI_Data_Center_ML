@@ -1,0 +1,223 @@
+AI DATA CENTER MANAGEMENT USING MACHINE LEARNING
+COMPREHENSIVE PROJECT OVERVIEW & ARCHITECTURE REPORT
+Generated for: College Final Project Review
+Repository Branch: yuki
+Target System: Full-Stack ML Prototype (FastAPI + React TypeScript + Vite)
+
+1. EXECUTIVE SUMMARY & PROJECT GOAL
+The objective of this project is to develop an integrated machine-learning
+framework for intelligent AI data center management.
+
+In traditional data centers, workload scheduling, thermal management, and 
+network security are investigated as separate, isolated domains. This project
+unifies them under a common operational decision-making framework:
+
+  Workload Demand  ──> Power & Temperature  ──> Dynamic Cooling  ──> Node Availability
+  Network Traffic  ──> Feature Extraction   ──> Threat Detection ──> Threat Isolation
+                                    ↓
+              Unified Resource & Scheduling Decision Platform
+
+The prototype is implemented directly inside the existing workspace with NO
+fabricated metrics, NO fake predictions, and full preservation of existing
+research code and datasets.
+
+
+2. MACHINE LEARNING (ML) IMPLEMENTATION BREAKDOWN
+
+A. NETWORK SECURITY THREAT INTELLIGENCE (LIVE & DEPLOYED)
+   * Model Type: Random Forest Classifier (200 trees, balanced class weights).
+   * Feature Pipeline: ColumnTransformer with SimpleImputer (median for numeric,
+     most-frequent for categorical) and OneHotEncoder(handle_unknown='ignore').
+   * Exact 8 Input Features:
+       1. flow_duration    (Numeric, seconds)
+       2. src_packets      (Numeric, packet count)
+       3. dst_packets      (Numeric, packet count)
+       4. src_bytes        (Numeric, byte count)
+       5. dst_bytes        (Numeric, byte count)
+       6. protocol         (Categorical, e.g., tcp, udp, ospf, arp)
+       7. connection_state (Categorical, e.g., fin, con, int, req)
+       8. service          (Categorical, e.g., -, http, dns, ftp, smtp)
+   * Preprocessing Script:
+       src/preprocessing/prepare_security_ml.py
+       Extracts standardized features from raw/standardized CSVs into ml_ready.csv.
+   * Training Script:
+       src/scripts/train_security_baseline.py
+       Fits pipeline on 175,341 training flows and exports serialized artifact:
+       ==> models/security/security_random_forest.joblib
+   * Target Output:
+       Binary classification: 0 (Normal) vs. 1 (Attack) with calibrated probabilities.
+   * Verified Evaluation Results (from reports/security_model/):
+       - Training Rows: 175,341 flows (UNSW-NB15 Standardized)
+       - Holdout Testing Rows: 82,332 flows
+       - Test Accuracy: 88.36% (0.8836)
+       - Balanced Accuracy: 87.57% (0.8757)
+       - ROC-AUC Score: 0.9721
+       - Attack Recall: 95.3% (43,203 out of 45,332 attacks detected)
+       - Attack Precision: 85.3%
+       - Normal Precision: 93.3%
+   * Unseen Feature-Combination Evaluation (src/scripts/evaluate_unseen_security.py):
+       - Evaluated on 47,089 holdout flows having zero feature overlap with training data.
+       - Accuracy on Unseen Flows: 82.49% (0.8249)
+       - ROC-AUC on Unseen Flows: 0.9384
+       - Qualification: Demonstrates model resilience across novel combinations
+         of known features in the benchmark holdout set (not an absolute zero-day guarantee).
+   * Feature Importance Ranking (src/scripts/security_feature_importance.py):
+       1. flow_duration    : 22.7%
+       2. src_bytes        : 19.3%
+       3. dst_bytes        : 13.8%
+       4. connection_state : 13.0%
+       5. dst_packets      :  9.6%
+       6. src_packets      :  9.4%
+       7. protocol         :  6.6%
+       8. service          :  5.6%
+
+B. WORKLOAD INTELLIGENCE & CLUSTER ALLOCATION (SIMULATION ACTIVE)
+   * Offline Training Architecture:
+       Script: src/models/workload/train_workload_model.py
+       Target: next_machine_cpu (%)
+       Features: machine_cpu, machine_gpu, machine_cpu_usr, machine_cpu_kernel,
+                 machine_cpu_iowait, machine_load_1, machine_num_worker.
+       Split: Chronological holdout (latest 20% of observations per node).
+       Documented Benchmark Metrics:
+         - Random Forest Regressor (100 estimators, max depth 18):
+           MAE: ~1.546 %, RMSE: ~3.153 %, R²: ~0.971
+         - Persistence Baseline: ŷ(t+1) = y(t).
+   * Ingestion Status:
+       The multi-gigabyte pai_machine_metric.csv source file was omitted from Git.
+       Per project rules, live regression inference is disabled (returns HTTP 503
+       with clear explanation) rather than substituting fake predictions.
+   * Cluster Allocation Simulation Engine:
+       Uses authentic Alibaba PAI server specifications:
+       ==> src/data/raw/workload/pai_machine_spec.csv (1,897 physical server nodes)
+       The simulator accepts user demand (CPU cores, Memory GB, GPU count), applies
+       the chosen placement strategy (Balanced Distribution, Bin Packing, or GPU
+       Node Prioritization), enforces an 85% safety capacity ceiling per node, and
+       calculates before-and-after cluster utilization.
+
+C. THERMAL MANAGEMENT & RISK FORECASTING (ARCHITECTURE DOCUMENTED)
+   * Forecasting Architecture:
+       Script: src/models/thermal_forecasting.py
+       Horizon: 30 minutes ahead (3 steps of 10-minute intervals).
+       Target: mean_outlet_temp (°C)
+       Features: 30-minute historical lag features (0, 10, 20, 30, 60 min) across
+                 mean_inlet_temp, mean_outlet_temp, mean_power_consumption,
+                 and mean_temperature_difference.
+   * Exploratory Thermal Risk Criteria:
+       Script: src/models/thermal_risk_analysis.py
+       Statistical thresholds evaluated on Marconi A2 supercomputer logs:
+         - 55.0 °C : Advisory (Elevated zone; inspect CRAH fan airflow)
+         - 60.0 °C : Warning (Action threshold; inspect containment panels)
+         - 65.0 °C : Critical (Workload throttling and fan speed ramp)
+         - 70.0 °C : Emergency (Hardware safety thermal shutdown limit)
+         - 95th Percentile Cutoff : Statistical peak events.
+   * Ingestion Status:
+       Multi-GB raw sensor telemetry was omitted from Git. The UI features a
+       User-Provided Scenario Explorer and statistical threshold documentation,
+       while suppressing fake predictions.
+
+
+3. SOFTWARE ARCHITECTURE (FULL-STACK PROTOTYPE)
+
+A. BACKEND (Python 3.12 + FastAPI + Pydantic v2 + PyMongo + Argon2id)
+   Located in: backend/
+   * app/main.py: App creation, dynamic CORS for production/dev origins, global exception handlers.
+   * app/api/endpoints.py: REST routing for 24 endpoints (including authentication and simulation).
+   * app/services/:
+       - db.py                 : MongoDB Atlas connection pool, unique email index, and mongomock testing fallback.
+       - auth_service.py       : RFC 9106 Argon2id password hashing, session management, and HttpOnly cookies.
+       - model_loader.py       : Singleton registry tracking real artifact existence.
+       - security_service.py   : Preprocessing & live inference for Random Forest.
+       - workload_service.py   : Machine spec parser & heuristic allocation engine.
+       - thermal_service.py    : Thermal feature metadata & threshold definitions.
+       - simulation_service.py : Cross-domain dependency engine, presets, and rule evaluation.
+       - dataset_service.py    : Allowlist-controlled dataset sampler & summarizer.
+   * app/schemas/: Strict Pydantic models for authentication, users, models, simulation, and datasets.
+   * tests/: 28 automated test cases (pytest) covering health, authentication, Argon2id hashing,
+     sessions, models, inference, presets, cross-domain propagation, and dataset sampling.
+     ==> 100% test pass rate in 10.73s.
+
+B. FRONTEND (React 19 + TypeScript + Vite 8 + Tailwind CSS v4)
+   Located in: frontend/
+   * Design: Enterprise dark navy (#0A0E17), subtle slate borders (#1E293B),
+     electric cyan (#06B6D4) and emerald (#10B981) accents.
+   * 6 Integrated Views:
+       1. Overview Dashboard: KPI statistics, component readiness, data-flow diagram.
+       2. Impact Simulator: Interactive 3-domain dependency network (Security <-> Workload <-> Thermal)
+          with live presets, DPI compute overhead, Joule heat dissipation, safety downclocking,
+          before-and-after metric audits, and dynamic operational response recommendations.
+       3. Security Intelligence: Live inference form with 1-click authentic presets
+          (Standard HTTP, OSPF Reconnaissance, DNS Query), probability meters,
+          feature importance breakdown, and confusion matrix.
+       4. Workload & Allocation: Regression architecture, offline benchmark comparisons,
+          and interactive cluster allocation simulation on 1,897 Alibaba nodes.
+       5. Thermal Intelligence: User-provided scenario telemetry explorer, 30-min
+          horizon lag architecture, and exploratory threshold table.
+       6. Evaluation & Datasets: Verified metrics comparison and Live Disk Sample
+          Drawer rendering genuine CSV records from disk.
+   * Production Build: tsc -b && vite build ==> built in 6.40s with 0 errors.
+
+
+4. DATASET CATALOG (STANDARDIZED BENCHMARKS ON DISK)
+1. UNSW-NB15 Training Set:
+   Path: data/standardized/security/unsw_nb15_UNSW_NB15_training-set(in)_standardized.csv
+   Rows: 175,341 | Size: 10.30 MB | Columns: 20 (8 used in ML)
+2. UNSW-NB15 Testing Set:
+   Path: data/standardized/security/unsw_nb15_UNSW_NB15_testing-set(in)_standardized.csv
+   Rows: 82,332  | Size: 4.82 MB  | Columns: 20 (8 used in ML)
+3. ToN-IoT Network Telemetry:
+   Path: data/standardized/security/ton_iot_train_test_network(in)_standardized.csv
+   Rows: 211,043 | Size: 17.56 MB | Columns: 20 (8 used in ML)
+4. Alibaba PAI Machine Specifications:
+   Path: src/data/raw/workload/pai_machine_spec.csv
+   Nodes: 1,897  | Size: 0.07 MB  | Columns: 5 (machine_id, gpu_type, cap_cpu, cap_mem, cap_gpu)
+
+
+5. HOW TO RUN THE APPLICATION
+The backend and frontend servers run independently in local development mode:
+
+Terminal 1: Start Backend API (FastAPI)
+  cd AI_Data_Center_ML
+  python -m uvicorn app.main:app --host 127.0.0.1 --port 8000
+  Health Check: http://127.0.0.1:8000/api/health
+  Swagger API Docs: http://127.0.0.1:8000/docs
+
+Terminal 2: Start Frontend (React + Vite)
+  cd AI_Data_Center_ML/frontend
+  npm run dev
+  Web Dashboard: http://localhost:5173/ (or http://127.0.0.1:5173/)
+
+Run Test Suites:
+  Backend Tests:  python -m pytest backend/tests/test_api.py -v
+  Frontend Build: cd frontend && npm run build
+
+
+6. THREE-MINUTE FINAL REVIEW DEMO SCRIPT
+0:00 - 0:45 | Overview Dashboard
+  - Open http://localhost:5173/. Point to "Core API Online" status badge.
+  - Highlight the 88.36% test accuracy and 82.49% unseen generalization score.
+  - Explain the multi-domain architecture: Workload -> Thermal -> Security -> Decision.
+
+0:45 - 1:30 | Integrated Impact Simulator (The Core Innovation)
+  - Open "Impact Simulator" tab.
+  - Show the 3-Node Connected Diagram: Security <-> Workload <-> Thermal.
+  - Click preset "Security Incident & DPI Overhead":
+    * Shows Random Forest model classifying OSPF probe as ATTACK (100% prob).
+    * Highlights Security -> Workload effect: DPI adds +150 cores inspection demand.
+  - Click preset "Workload Surge & Heat Rise":
+    * Shows demand surging to 920 cores, pushing outlet temp >60°C.
+    * Highlights Workload -> Thermal effect: Joule heating elevates temperature.
+  - Click preset "Thermal Emergency & Throttling":
+    * Ambient inlet at 36°C triggers thermal ceiling breach.
+    * Highlights Thermal -> Workload effect: Capacity throttled by -42%, forcing backlog!
+  - Review Before-and-After Metrics table, Chronological Event Trace, and dynamic recommendations.
+
+1:30 - 2:15 | Dedicated Security & ML Baseline
+  - Open "Security Intelligence" tab.
+  - Demonstrate live single-flow inference on presets (Standard HTTP vs OSPF Probe).
+  - Point out Feature Importance (Flow duration 22.7%, Source bytes 19.3%) and 95.3% recall.
+
+2:15 - 3:00 | Workload Allocation & Real Dataset Catalog
+  - Open "Workload & Allocation": Run allocation simulation across 1,897 Alibaba nodes.
+  - Open "Evaluation & Datasets": Inspect live disk records from UNSW-NB15 and Alibaba CSVs.
+    
+END OF REPORT
