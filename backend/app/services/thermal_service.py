@@ -1,5 +1,4 @@
 from typing import List, Dict, Any
-import pandas as pd
 from fastapi import HTTPException
 
 from app.schemas.thermal import (
@@ -58,6 +57,7 @@ def predict_thermal(request: ThermalPredictRequest) -> ThermalPredictResponse:
         )
 
     # In case model is loaded
+    import pandas as pd
     input_df = pd.DataFrame([request.model_dump()])
     val = float(model.predict(input_df)[0])
     return ThermalPredictResponse(

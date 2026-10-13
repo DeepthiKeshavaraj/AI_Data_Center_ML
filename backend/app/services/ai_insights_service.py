@@ -1,6 +1,5 @@
 from pathlib import Path
 from typing import Dict, Any, List, Optional
-import pandas as pd
 from fastapi import HTTPException
 
 from app.schemas.ai_insights import (
@@ -43,6 +42,7 @@ def _load_nodes() -> List[Dict[str, Any]]:
     if not MACHINE_SPEC_PATH.exists():
         return []
     try:
+        import pandas as pd
         df = pd.read_csv(
             MACHINE_SPEC_PATH,
             header=None,
@@ -91,6 +91,7 @@ def predict_ai_security(request: AiSecurityPredictRequest) -> AiSecurityPredictR
         )
 
     # Construct input dataframe matching exact training columns
+    import pandas as pd
     input_df = pd.DataFrame([
         {
             "flow_duration": float(request.flow_duration),

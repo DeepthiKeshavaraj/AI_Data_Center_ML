@@ -1,6 +1,5 @@
 from pathlib import Path
 from typing import Dict, Any, List
-import pandas as pd
 from fastapi import HTTPException
 
 from app.schemas.workload import (
@@ -28,6 +27,7 @@ def _load_machine_specs() -> List[Dict[str, Any]]:
         return []
 
     try:
+        import pandas as pd
         # Format: machine, gpu_type, cap_cpu, cap_mem, cap_gpu
         df = pd.read_csv(
             MACHINE_SPEC_PATH,
