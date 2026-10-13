@@ -55,6 +55,8 @@ origins = [
     "http://127.0.0.1:5173",
     "http://localhost:3000",
     "http://127.0.0.1:3000",
+    "https://ai-data-center-ml.vercel.app",
+    "https://ai-datacenter-ml.onrender.com",
 ]
 
 # Allow custom frontend origins via environment variable
