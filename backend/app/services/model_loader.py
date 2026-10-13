@@ -10,16 +10,25 @@ PROJECT_ROOT = Path(__file__).resolve().parents[3]
 
 
 def _find_model_path(subpath: str) -> Path:
-    candidates = [
-        Path(__file__).resolve().parents[3] / subpath,
-        Path(__file__).resolve().parents[2] / subpath,
-        Path.cwd() / subpath,
-        Path.cwd().parent / subpath,
+    here = Path(__file__).resolve()
+    search_roots = [
+        here.parent,
+        here.parents[1],
+        here.parents[2],
+        here.parents[3] if len(here.parents) > 3 else here.parents[2],
+        Path.cwd(),
+        Path.cwd().parent,
     ]
-    for c in candidates:
-        if c.exists():
-            return c
-    return candidates[0]
+    subpath_clean = subpath.lstrip("/\\")
+    subpath_backend = f"backend/{subpath_clean}" if not subpath_clean.startswith("backend/") else subpath_clean
+    subpath_no_backend = subpath_clean[8:] if subpath_clean.startswith("backend/") else subpath_clean
+
+    for root in search_roots:
+        for variant in [subpath_clean, subpath_backend, subpath_no_backend]:
+            cand = (root / variant).resolve()
+            if cand.exists() and cand.is_file():
+                return cand
+    return (search_roots[2] / subpath_clean).resolve()
 
 
 SECURITY_MODEL_PATH = _find_model_path("models/security/security_random_forest.joblib")
@@ -57,6 +66,11 @@ class ModelRegistry:
 
     def check_model_artifacts(self):
         """Verify artifact presence and set readiness status without loading large binary objects at startup."""
+        global SECURITY_MODEL_PATH, WORKLOAD_MODEL_PATH, THERMAL_MODEL_PATH
+        SECURITY_MODEL_PATH = _find_model_path("models/security/security_random_forest.joblib")
+        WORKLOAD_MODEL_PATH = _find_model_path("models/workload/cpu_prediction_random_forest.joblib")
+        THERMAL_MODEL_PATH = _find_model_path("models/thermal/thermal_forecasting_model.joblib")
+
         # 1. Security Model
         if SECURITY_MODEL_PATH.exists():
             self._security_status = "loaded"
@@ -87,6 +101,10 @@ class ModelRegistry:
 
     def _load_security_model(self):
         """Internal helper to load the security model into memory on demand."""
+        global SECURITY_MODEL_PATH
+        if not SECURITY_MODEL_PATH.exists():
+            SECURITY_MODEL_PATH = _find_model_path("models/security/security_random_forest.joblib")
+
         if not SECURITY_MODEL_PATH.exists():
             self._security_status = "unavailable"
             self._security_error = f"Artifact not found at {SECURITY_MODEL_PATH}"
@@ -117,7 +135,7 @@ class ModelRegistry:
     @property
     def security_model(self):
         """Thread-safe on-demand accessor for the security Random Forest model."""
-        if self._security_model is None and self._security_status == "loaded":
+        if self._security_model is None:
             with self._lock:
                 if self._security_model is None:
                     self._load_security_model()
