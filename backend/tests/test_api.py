@@ -13,6 +13,28 @@ from app.main import app
 client = TestClient(app)
 
 
+def test_root_endpoint():
+    # Browser visit returns HTML or index file
+    response = client.get("/")
+    assert response.status_code == 200
+
+    # API client visit with JSON accept header
+    response_json = client.get("/", headers={"Accept": "application/json"})
+    assert response_json.status_code == 200
+    assert response_json.headers.get("content-type", "").startswith("application/json") or response.status_code == 200
+
+
+def test_root_head_endpoint():
+    # Render health probe sends HEAD /
+    response = client.head("/")
+    assert response.status_code == 200
+
+
+def test_favicon_endpoint():
+    response = client.get("/favicon.ico")
+    assert response.status_code == 204
+
+
 def test_health_endpoint():
     response = client.get("/api/health")
     assert response.status_code == 200
