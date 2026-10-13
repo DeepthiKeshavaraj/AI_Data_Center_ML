@@ -3,7 +3,6 @@ import logging
 import threading
 import gc
 from typing import Dict, Any, Optional
-import joblib
 
 logger = logging.getLogger(__name__)
 
@@ -96,6 +95,7 @@ class ModelRegistry:
         try:
             logger.info(f"On-demand lazy loading security model from {SECURITY_MODEL_PATH}...")
             gc.collect()
+            import joblib
             loaded = joblib.load(SECURITY_MODEL_PATH)
             # Enforce single worker to avoid process duplication in 512MB container
             if hasattr(loaded, "named_steps") and "classifier" in loaded.named_steps:

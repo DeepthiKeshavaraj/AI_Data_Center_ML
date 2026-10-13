@@ -1,7 +1,6 @@
 from pathlib import Path
 from typing import Dict, Any, List
 import math
-import pandas as pd
 from fastapi import HTTPException
 
 from app.services.model_loader import PROJECT_ROOT
@@ -86,6 +85,7 @@ def get_dataset_sample(dataset_id: str, limit: int = 10) -> Dict[str, Any]:
     limit = max(1, min(limit, 50))  # Controlled bounded limit
 
     try:
+        import pandas as pd
         if dataset_id == "pai_machine_spec":
             df = pd.read_csv(
                 path,

@@ -1,4 +1,14 @@
 import os
+import gc
+
+# Essential memory & thread limits for Linux containers (e.g. Render 512MiB limit)
+os.environ.setdefault("MALLOC_ARENA_MAX", "2")
+os.environ.setdefault("OMP_NUM_THREADS", "1")
+os.environ.setdefault("OPENBLAS_NUM_THREADS", "1")
+os.environ.setdefault("MKL_NUM_THREADS", "1")
+os.environ.setdefault("VECLIB_MAXIMUM_THREADS", "1")
+os.environ.setdefault("NUMEXPR_NUM_THREADS", "1")
+
 import logging
 from pathlib import Path
 
@@ -23,6 +33,9 @@ from fastapi.staticfiles import StaticFiles
 
 from app.api.endpoints import router
 from app.api.ai_insights_router import ai_router
+
+# Free transient import allocations
+gc.collect()
 
 logging.basicConfig(
     level=logging.INFO,

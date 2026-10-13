@@ -1,7 +1,6 @@
 from pathlib import Path
 import json
 from typing import Dict, Any, List
-import pandas as pd
 from fastapi import HTTPException
 
 from app.schemas.security import (
@@ -71,6 +70,7 @@ def predict_security(request: SecurityPredictRequest) -> SecurityPredictResponse
         )
 
     # Prepare DataFrame matching the exact training columns
+    import pandas as pd
     input_df = pd.DataFrame([
         {
             "flow_duration": float(request.flow_duration),
@@ -144,6 +144,7 @@ def get_security_metadata() -> SecurityMetadataResponse:
     imp_file = REPORT_DIR / "feature_importance_by_group.csv"
     if imp_file.exists():
         try:
+            import pandas as pd
             imp_df = pd.read_csv(imp_file)
             feature_importances = imp_df.to_dict(orient="records")
         except Exception:
