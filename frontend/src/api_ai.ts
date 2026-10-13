@@ -1,9 +1,8 @@
 // Isolated API client for AI Insights & Real ML capabilities
-
-const BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api';
+import { buildApiUrl } from './api';
 
 async function aiApiFetch<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
-  const url = `${BASE_URL}${endpoint}`;
+  const url = buildApiUrl(endpoint);
   const response = await fetch(url, {
     ...options,
     credentials: 'include',

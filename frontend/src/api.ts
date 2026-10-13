@@ -18,14 +18,62 @@ import {
   DbStatusResponse,
 } from './types';
 
-// Dynamic base URL configurable via VITE_API_BASE_URL environment variable for deployment
-const BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api';
+/**
+ * Production fallback Render backend URL.
+ */
+const DEFAULT_PRODUCTION_API_ORIGIN = 'https://ai-datacenter-ml.onrender.com';
+
+/**
+ * Returns the normalized API base URL.
+ * Handles:
+ * - Environment variable VITE_API_BASE_URL (if provided in Vercel or .env)
+ * - Trailing slashes
+ * - Ensuring the '/api' prefix is preserved exactly once
+ * - Preventing duplicate '/api' prefixes (e.g. if VITE_API_BASE_URL is set to 'https://.../api')
+ * - Defaulting in production to 'https://ai-datacenter-ml.onrender.com/api'
+ * - Defaulting in development to '/api' (Vite dev proxy)
+ */
+export function getApiBaseUrl(): string {
+  const envUrl = (import.meta.env.VITE_API_BASE_URL || '').trim();
+
+  // In local development without an explicit override, route through the Vite proxy
+  if (import.meta.env.DEV && !envUrl) {
+    return '/api';
+  }
+
+  // Determine starting base: explicit env var if set, otherwise default production origin
+  let base = envUrl || DEFAULT_PRODUCTION_API_ORIGIN;
+
+  // Strip trailing slashes
+  base = base.replace(/\/+$/, '');
+
+  // Ensure base ends with '/api' exactly once (avoiding duplicate '/api/api' or missing '/api')
+  if (!base.endsWith('/api')) {
+    base = `${base}/api`;
+  }
+
+  return base;
+}
+
+/**
+ * Constructs a fully qualified URL for the given API endpoint.
+ * Prevents duplicate '/api' prefixes, double slashes, or accidental relative URLs.
+ */
+export function buildApiUrl(endpoint: string): string {
+  const base = getApiBaseUrl();
+  const cleanEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
+
+  // If endpoint already starts with '/api/', strip that leading '/api' so it doesn't duplicate
+  const path = cleanEndpoint.startsWith('/api/') ? cleanEndpoint.slice(4) : cleanEndpoint;
+
+  return `${base}${path}`;
+}
 
 /**
  * Common fetch helper ensuring credentials: 'include' for HttpOnly cookie sessions
  */
 async function apiFetch(endpoint: string, options: RequestInit = {}) {
-  const url = `${BASE_URL}${endpoint}`;
+  const url = buildApiUrl(endpoint);
   const response = await fetch(url, {
     ...options,
     credentials: 'include',

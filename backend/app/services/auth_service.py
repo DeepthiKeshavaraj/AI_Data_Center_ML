@@ -181,22 +181,32 @@ def invalidate_user_session(session_token: str):
 
 
 def set_auth_cookie(response: Response, session_token: str):
-    is_prod = os.getenv("ENVIRONMENT", "development").lower() == "production"
+    # In production or cross-site environments (Vercel -> Render),
+    # SameSite must be 'none' and Secure must be True for cross-origin credentials
+    is_prod = (
+        os.getenv("ENVIRONMENT", "development").lower() in ("production", "prod")
+        or os.getenv("RENDER") is not None
+    )
     response.set_cookie(
         key=COOKIE_NAME,
         value=session_token,
         httponly=True,
-        secure=is_prod,
-        samesite="lax",
+        secure=True if is_prod else False,
+        samesite="none" if is_prod else "lax",
         max_age=SESSION_DURATION_HOURS * 3600,
         path="/",
     )
 
 
 def clear_auth_cookie(response: Response):
+    is_prod = (
+        os.getenv("ENVIRONMENT", "development").lower() in ("production", "prod")
+        or os.getenv("RENDER") is not None
+    )
     response.delete_cookie(
         key=COOKIE_NAME,
         path="/",
         httponly=True,
-        samesite="lax",
+        secure=True if is_prod else False,
+        samesite="none" if is_prod else "lax",
     )
