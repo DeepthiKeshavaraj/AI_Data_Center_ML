@@ -8,9 +8,10 @@ import {
   Server,
   Layers,
   Activity,
+  Brain,
 } from 'lucide-react';
 
-export type TabType = 'overview' | 'simulator' | 'security' | 'workload' | 'thermal' | 'metrics';
+export type TabType = 'overview' | 'simulator' | 'ai-insights' | 'security' | 'workload' | 'thermal' | 'metrics';
 
 interface SidebarProps {
   currentTab: TabType;
@@ -37,6 +38,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
       icon: Activity,
       badge: 'Interactive',
       badgeColor: 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/30',
+    },
+    {
+      id: 'ai-insights' as TabType,
+      label: 'AI Model Insights',
+      description: 'Live inference & multi-model analysis',
+      icon: Brain,
+      badge: 'AI Live',
+      badgeColor: 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30',
     },
     {
       id: 'security' as TabType,

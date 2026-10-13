@@ -21,6 +21,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 from app.api.endpoints import router
+from app.api.ai_insights_router import ai_router
 
 logging.basicConfig(
     level=logging.INFO,
@@ -58,6 +59,7 @@ app.add_middleware(
 )
 
 app.include_router(router)
+app.include_router(ai_router)
 
 
 @app.exception_handler(Exception)

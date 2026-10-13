@@ -7,6 +7,7 @@ import { WorkloadPage } from './pages/WorkloadPage';
 import { ThermalPage } from './pages/ThermalPage';
 import { SimulatorPage } from './pages/SimulatorPage';
 import { MetricsDatasetsPage } from './pages/MetricsDatasetsPage';
+import { AiInsightsPage } from './pages/AiInsightsPage';
 import { AuthPage } from './pages/AuthPage';
 
 import {
@@ -147,6 +148,7 @@ export function App() {
             <OverviewPage overview={overview} onNavigate={setCurrentTab} />
           )}
           {currentTab === 'simulator' && <SimulatorPage />}
+          {currentTab === 'ai-insights' && <AiInsightsPage />}
           {currentTab === 'security' && <SecurityPage metadata={securityMeta} />}
           {currentTab === 'workload' && <WorkloadPage metadata={workloadMeta} />}
           {currentTab === 'thermal' && <ThermalPage metadata={thermalMeta} />}
