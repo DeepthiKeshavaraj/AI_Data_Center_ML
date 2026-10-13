@@ -181,3 +181,44 @@ export async function predictAiThermal(payload: AiThermalPredictRequest): Promis
     body: JSON.stringify(payload),
   });
 }
+
+// --- Generative AI Explanation Interfaces & Endpoints ---
+
+export interface ExplanationRequest {
+  module: 'security' | 'workload' | 'cluster' | 'thermal' | 'benchmarks';
+  context: Record<string, any>;
+  question?: string;
+  detail_level?: 'concise' | 'detailed';
+}
+
+export interface ExplanationResponse {
+  success: boolean;
+  module: string;
+  explanation: string;
+  key_findings: string[];
+  recommendations: string[];
+  limitations: string[];
+  provider: string;
+  model: string;
+  prompt_tokens?: number;
+  completion_tokens?: number;
+}
+
+export interface ExplanationStatusResponse {
+  configured: boolean;
+  model: string;
+  provider: string;
+  message: string;
+}
+
+export async function fetchExplanationStatus(): Promise<ExplanationStatusResponse> {
+  return aiApiFetch<ExplanationStatusResponse>('/ai/explain/status', { method: 'GET' });
+}
+
+export async function requestExplanation(payload: ExplanationRequest): Promise<ExplanationResponse> {
+  return aiApiFetch<ExplanationResponse>('/ai/explain', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  });
+}
+

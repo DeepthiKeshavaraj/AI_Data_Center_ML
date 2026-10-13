@@ -36,6 +36,7 @@ import {
   AiThermalPredictRequest,
   AiThermalPredictResponse,
 } from '../api_ai';
+import { AiExplanationPanel } from '../components/AiExplanationPanel';
 
 const SECURITY_PRESETS: { name: string; desc: string; values: AiSecurityPredictRequest }[] = [
   {
@@ -314,7 +315,8 @@ export const AiInsightsPage: React.FC = () => {
 
       {/* SECTION 1: SECURITY INTELLIGENCE */}
       {activeSection === 'security' && (
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        <div className="space-y-6">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
           {/* Input Form Column */}
           <div className="lg:col-span-6 space-y-4">
             <div className="p-5 rounded-xl bg-slate-900 border border-slate-800">
@@ -606,6 +608,37 @@ export const AiInsightsPage: React.FC = () => {
             )}
           </div>
         </div>
+
+        {/* Generative AI Explanation Panel for Security */}
+        <AiExplanationPanel
+          module="security"
+          context={
+            secResult
+              ? {
+                  predicted_label: secResult.label,
+                  class_id: secResult.class_id,
+                  is_malicious_threat: secResult.is_threat,
+                  confidence_percentage: Math.round(secResult.confidence * 100),
+                  probabilities: secResult.probabilities,
+                  risk_level: secResult.risk_level,
+                  recommended_action: secResult.recommended_action,
+                  model_name: secResult.model_name,
+                  evaluated_network_flow: secForm,
+                  top_features: secResult.feature_contributions.slice(0, 4),
+                  evaluation_basis: secResult.evaluation_basis,
+                }
+              : null
+          }
+          isContextReady={!!secResult}
+          contextDescription="Context: Genuine Random Forest 200-tree classification output and network flow features."
+          suggestedQuestions={[
+            'Why was this flow categorized with this threat label?',
+            'Which traffic features weighed most heavily in this verdict?',
+            'What immediate operational containment steps are recommended?',
+            'Does this classification confirm a compromise or just anomalous traffic?',
+          ]}
+        />
+      </div>
       )}
 
       {/* SECTION 2: WORKLOAD ALLOCATION & SIMULATION */}
@@ -790,6 +823,31 @@ export const AiInsightsPage: React.FC = () => {
             </div>
           </div>
 
+          {/* Generative AI Explanation Panel for Workload */}
+          <AiExplanationPanel
+            module="workload"
+            context={
+              wlResult
+                ? {
+                    status: wlResult.status,
+                    reported_message: wlResult.message,
+                    explanation_note: wlResult.explanation,
+                    persistence_baseline_cpu: wlResult.baseline_prediction,
+                    suggested_headroom_pct: wlResult.suggested_headroom_pct,
+                    input_machine_metrics: wlForm,
+                  }
+                : null
+            }
+            isContextReady={!!wlResult}
+            contextDescription="Context: Alibaba PAI machine metric schema and regression engine status."
+            suggestedQuestions={[
+              'Why is the workload regression model reported as unavailable?',
+              'How does the persistence baseline compare with a trained regression model?',
+              'What capacity planning steps should an operator take based on these CPU metrics?',
+              'How does system load (load_1) correlate with machine CPU utilization?',
+            ]}
+          />
+
           {/* Cluster Placement Recommender (Active via 1,897 Alibaba Specs) */}
           <div className="p-5 rounded-xl bg-slate-900 border border-slate-800 space-y-4">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -930,12 +988,43 @@ export const AiInsightsPage: React.FC = () => {
               </div>
             )}
           </div>
+
+          {/* Generative AI Explanation Panel for Cluster Placement */}
+          <AiExplanationPanel
+            module="cluster"
+            context={
+              placementResult
+                ? {
+                    demands_satisfied: placementResult.demands_satisfied,
+                    strategy_used: placementResult.strategy_used,
+                    demanded_cores: demandCores,
+                    demanded_memory_gb: demandMem,
+                    demanded_gpus: demandGpus,
+                    total_nodes_evaluated: placementResult.total_nodes_evaluated,
+                    cluster_capacity_cores: placementResult.cluster_capacity_cores,
+                    cluster_demand_cores: placementResult.cluster_demand_cores,
+                    average_utilization_pct: placementResult.average_utilization_pct,
+                    recommendation_summary: placementResult.recommendation_summary,
+                    sample_allocations: placementResult.allocations.slice(0, 4),
+                  }
+                : null
+            }
+            isContextReady={!!placementResult}
+            contextDescription="Context: Alibaba PAI physical server allocation calculation on 1,897 node specs."
+            suggestedQuestions={[
+              'Why was this particular placement distribution selected across candidate nodes?',
+              'How does the 85% safety ceiling protect data center stability?',
+              'What are the operational trade-offs of this allocation strategy?',
+              'Why was GPU demand accommodated or restricted on these nodes?',
+            ]}
+          />
         </div>
       )}
 
       {/* SECTION 3: THERMAL MANAGEMENT */}
       {activeSection === 'thermal' && (
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        <div className="space-y-6">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
           <div className="lg:col-span-6 space-y-4">
             <div className="p-5 rounded-xl bg-slate-900 border border-slate-800">
               <div className="flex items-center justify-between mb-4">
@@ -1059,6 +1148,32 @@ export const AiInsightsPage: React.FC = () => {
             )}
           </div>
         </div>
+
+        {/* Generative AI Explanation Panel for Thermal */}
+        <AiExplanationPanel
+          module="thermal"
+          context={
+            thResult
+              ? {
+                  evaluated_risk_level: thResult.risk_level,
+                  threshold_diagnostic: thResult.threshold_assessment,
+                  recommended_cooling_mitigation: thResult.recommended_mitigation,
+                  model_status_note: thResult.message,
+                  sensor_inputs: thForm,
+                  operational_bounds: '<55.0°C Normal, 55.0°C Advisory, 60.0°C Warning, 65.0°C Critical, 70.0°C Emergency',
+                }
+              : null
+          }
+          isContextReady={!!thResult}
+          contextDescription="Context: Rack temperature telemetry, heat dissipation delta, and Marconi A2 thresholds."
+          suggestedQuestions={[
+            'Which Marconi A2 threshold level was breached and what is its operational severity?',
+            'What CRAH or chiller adjustments should facilities operators make immediately?',
+            'What are the limitations of evaluating temperature from these four sensor points alone?',
+            'How does rack power consumption correlate with temperature delta (outlet minus inlet)?',
+          ]}
+        />
+      </div>
       )}
 
       {/* SECTION 4: BENCHMARKS & VERIFIED METRICS */}
@@ -1102,6 +1217,35 @@ export const AiInsightsPage: React.FC = () => {
               <div className="text-[11px] text-slate-500">Demonstrates high class discrimination</div>
             </div>
           </div>
+
+          {/* Generative AI Explanation Panel for Benchmarks */}
+          <AiExplanationPanel
+            module="benchmarks"
+            context={{
+              security_holdout_accuracy: 0.8836,
+              security_holdout_flows: 82332,
+              unseen_feature_generalization_accuracy: 0.8249,
+              unseen_flows_tested: 47089,
+              security_roc_auc: 0.9721,
+              security_attack_recall: 0.953,
+              security_attack_precision: 0.853,
+              workload_offline_benchmark_metrics: {
+                mae: 1.546,
+                rmse: 3.153,
+                r2: 0.971,
+                source: 'src/models/workload/train_workload_model.py',
+              },
+              thermal_evaluation_architecture: '30-minute lag horizon with documented Marconi A2 safety limits',
+            }}
+            isContextReady={true}
+            contextDescription="Context: Historical holdout evaluations, unseen feature generalization, and benchmark comparison criteria."
+            suggestedQuestions={[
+              'How should an engineer interpret the 82.49% unseen generalization accuracy?',
+              'Does the 0.9721 ROC-AUC score prove the model is ready for live production?',
+              'What are the key differences between benchmark test metrics and live data center traffic?',
+              'How do the Random Forest workload regressor metrics compare to simple persistence?',
+            ]}
+          />
         </div>
       )}
     </div>

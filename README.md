@@ -27,6 +27,7 @@ This project implements an integrated machine-learning framework and interactive
 | **Workload Allocation** | **Active Simulation** | Heuristic & Capacity Placement Engine | Alibaba PAI Machine Specs (`pai_machine_spec.csv`, `1,898` nodes) | Multi-node balanced load distribution with 85% safety threshold |
 | **Workload Regression** | **Architecture Documented** | Next-CPU Random Forest Regressor (`train_workload_model.py`) | Alibaba PAI Machine Metrics (multi-GB source dataset pending ingestion) | Documented schema (`machine_cpu` ... `machine_num_worker` → `next_machine_cpu`) |
 | **Thermal Intelligence**| **Architecture Documented** | 30-Min Outlet Temp Regressor (`thermal_forecasting.py`) | Marconi A2 Supercomputer (multi-GB sensor files pending ingestion) | Exploratory thresholds: 55°C (Advisory), 60°C (Warn), 65°C (Crit), 70°C (Emerg) |
+| **Generative AI Explanations** | **Live & Integrated** | OpenAI Official SDK (`AsyncOpenAI` JSON Mode) | Live ML Model Outputs & Operational Context | Structured operational explanations, key findings, actionable recommendations & limitations |
 
 ---
 
@@ -42,6 +43,7 @@ This project implements an integrated machine-learning framework and interactive
 python -m uvicorn app.main:app --host 127.0.0.1 --port 8000
 ```
 - Health Check: `http://127.0.0.1:8000/api/health`
+- GenAI Status: `http://127.0.0.1:8000/api/ai/explain/status`
 - Interactive OpenAPI Docs: `http://127.0.0.1:8000/docs`
 
 ### B. Frontend Startup (React + Vite + Tailwind CSS)
@@ -55,7 +57,7 @@ npm run dev -- --host 127.0.0.1 --port 5173
 
 ### C. Running Tests
 ```bash
-# Backend pytest suite (28 test cases covering health, models, inference, simulation, Argon2id auth, sessions, and datasets)
+# Backend pytest suite (45 test cases covering health, models, inference, simulation, Argon2id auth, sessions, datasets, and Generative AI explanation service)
 python -m pytest backend/tests/ -v
 
 # Frontend TypeScript check and production build
@@ -78,6 +80,8 @@ npm run build
    MONGODB_DATABASE=ai_datacenter_ml
    ENVIRONMENT=production
    CORS_ORIGINS=https://your-frontend-domain.vercel.app
+   OPENAI_API_KEY=your_actual_api_key_here
+   OPENAI_MODEL=gpt-4o-mini
    ```
 *(Note: If no `MONGODB_URI` is provided, the backend automatically initializes an in-memory test database so local testing and offline academic reviews run with 0 friction!)*
 
@@ -107,7 +111,6 @@ npm run build
 - `GET /api/dashboard/protected-data` - Authenticated dashboard resource access check.
 
 ### Core Intelligence & Simulation
-
 - `GET /api/health` - System health and service version.
 - `GET /api/models/status` - Live loading status for Security, Workload, and Thermal components.
 - `GET /api/overview` - KPI summaries, model readiness, and cluster server count.
@@ -124,9 +127,61 @@ npm run build
 - `GET /api/datasets/summary` - Standardized datasets catalog (UNSW-NB15, ToN-IoT, Alibaba PAI).
 - `GET /api/datasets/{dataset_id}/sample` - Bounded sample row preview directly from disk.
 
+### Generative AI Explanation System (Google Gemini & OpenAI Integration)
+- `GET /api/ai/explain/status` - Verifies configured provider status (`Gemini` or `OpenAI`), connection health, and active model.
+- `POST /api/ai/explain` - Generates grounded operational explanations from actual ML predictions and datacenter context.
+  - **Payload**: `{ module: "security" | "workload" | "cluster" | "thermal" | "benchmarks", context: {...}, question?: string, detail_level?: "concise" | "detailed" }`
+  - **Response**: `{ success: true, module, explanation, key_findings: [], recommendations: [], limitations: [], provider, model }`
+
 ---
 
-## 5. 3-Minute Final Review Demonstration Script
+## 6. Generative AI Explanation System
+
+### A. Architecture & Grounded Design
+The Generative AI layer supports both **Google Gemini** (via official `google-genai` SDK, free tier available) and **OpenAI** (via `openai` SDK):
+- **Distinction from Scikit-learn Models**:
+  - **Random Forest Classifier**: Computes numeric attack probability and binary classification on UNSW-NB15 network flow features.
+  - **Alibaba PAI Engine**: Computes exact cluster node placements respecting CPU, GPU, memory constraints, and safety ceilings.
+  - **Marconi A2 Evaluator**: Computes deterministic rule-based thermal risk against established thresholds.
+  - **Generative AI Layer (Gemini / OpenAI)**: Translates the structured, validated numeric outputs into operator-friendly technical explanations, operational trade-offs, actionable recommendations, and data limitations.
+- **Strict Anti-Fabrication Guardrail**:
+  - The AI service does **not** simulate or hallucinate predictions.
+  - If a model is unavailable (e.g. Workload 503), the AI explicitly identifies the missing model and explains that real inference could not be performed.
+  - If no API key is configured, the backend returns HTTP 503 with a structured diagnostic error. **No mock AI or canned responses are ever returned.**
+- **Security & Privacy**:
+  - API keys are securely loaded from environment variables on the backend; they are **never** exposed to the frontend or browser network requests.
+  - Context payloads automatically sanitize sensitive fields (`password`, `token`, `session_token`) before dispatching to external providers.
+
+### B. Environment Configuration
+Configure your preferred provider in `backend/.env`:
+
+#### Option 1: Google Gemini (Recommended — Free Tier Available)
+1. Get a free API key at [Google AI Studio](https://aistudio.google.com/app/apikey).
+2. Add to `backend/.env`:
+```env
+GEMINI_API_KEY=AIzaSy...your-actual-gemini-key...
+GEMINI_MODEL=gemini-2.0-flash
+AI_PROVIDER=gemini
+```
+
+#### Option 2: OpenAI
+```env
+OPENAI_API_KEY=sk-...your-actual-openai-key...
+OPENAI_MODEL=gpt-4o-mini
+AI_PROVIDER=openai
+```
+*(If both are configured, `AI_PROVIDER` controls which engine is utilized)*
+
+### C. User Workflow on the AI Insights Page
+1. **Network Threat Intelligence**: Execute live Random Forest classification on network traffic → Click **"Explain with AI"** to analyze attack classification, flow metrics, and incident triage recommendations.
+2. **Workload Prediction**: View 7-feature schema and baseline → Click **"Explain with AI"** to analyze PAI metrics, capacity planning, and model status.
+3. **Cluster Resource Allocation**: Simulate placement across 1,898 Alibaba nodes → Click **"Explain with AI"** to interpret node assignments, memory/GPU saturation, and safety limits.
+4. **Thermal Risk Evaluation**: Evaluate Marconi A2 inlet/outlet temperatures → Click **"Explain with AI"** to assess temperature deltas, throttling hazards, and cooling adjustments.
+5. **Model Benchmarks**: Click **"Explain with AI"** to receive an executive briefing on the 88.36% holdout accuracy, 82.49% unseen generalization, and 0.9721 ROC-AUC.
+
+---
+
+## 7. 3-Minute Final Review Demonstration Script
 
 1. **Overview Dashboard (0:00 - 0:45)**:
    - Point out live backend connection (`Core API Online`).
@@ -141,12 +196,13 @@ npm run build
    - Select **"Thermal Emergency & Throttling"**: Show how high ambient inlet temp triggers safety downclocking (-42% capacity) and accumulates workload backlog.
    - Examine the Before-and-After Metrics table, Chronological Event Trace, and dynamic recommendations.
 
-3. **Network Security Intelligence (1:30 - 2:15)**:
-   - Navigate to **Security Intelligence**.
+3. **Network Security Intelligence & GenAI Explanation (1:30 - 2:15)**:
+   - Navigate to **Security Intelligence / AI Insights**.
    - Click preset **"OSPF Reconnaissance Probe"** (authentic UNSW-NB15 record #243) and **"Execute ML Model Prediction"**: Observe immediate live **ATTACK** classification with 100% confidence.
-   - Click preset **"Standard HTTP Web Traffic"**: Observe **NORMAL** classification with 52% probability.
+   - Click **"Explain with AI"**: Observe grounded analysis of flow characteristics, packet rate, triage steps, and model limitations.
    - Review feature importances chart (flow duration 22.7%, source bytes 19.3%) and 95.3% attack recall.
 
-4. **Workload Allocation & Real Datasets (2:15 - 3:00)**:
-   - Navigate to **Workload & Allocation**: Run allocation simulation across 1,897 Alibaba nodes respecting the 85% safety ceiling.
+4. **Workload Allocation, Thermal Safety & Model Benchmarks (2:15 - 3:00)**:
+   - Navigate to **Workload & Allocation**: Run allocation simulation across 1,897 Alibaba nodes respecting the 85% safety ceiling, and trigger AI operational explanation.
+   - Navigate to **Thermal Risk**: Evaluate Marconi A2 cooling parameters and inspect AI thermal advisory.
    - Navigate to **Evaluation & Datasets**: Click **"Inspect Sample Records"** on UNSW-NB15 or Alibaba PAI to prove genuine local data integration without fabrications.

@@ -10,12 +10,21 @@ from app.schemas.ai_insights import (
     AiThermalPredictRequest,
     AiThermalPredictResponse,
 )
+from app.schemas.explanation import (
+    ExplanationRequest,
+    ExplanationResponse,
+    ExplanationStatusResponse,
+)
 from app.services.ai_insights_service import (
     get_ai_status,
     predict_ai_security,
     predict_ai_workload,
     recommend_workload_placement,
     predict_ai_thermal,
+)
+from app.services.explanation_service import (
+    generate_explanation,
+    get_explanation_service_status,
 )
 
 ai_router = APIRouter(prefix="/api/ai", tags=["AI Insights & Real ML"])
@@ -49,3 +58,15 @@ def execute_workload_recommendation(request: AiWorkloadRecommendRequest):
 def execute_thermal_ai_prediction(request: AiThermalPredictRequest):
     """Evaluate thermal risk thresholds and 30-min outlook with genuine model or statistical criteria."""
     return predict_ai_thermal(request)
+
+
+@ai_router.get("/explain/status", response_model=ExplanationStatusResponse)
+def get_ai_explanation_status():
+    """Check whether OpenAI Generative AI explanations are configured and ready."""
+    return get_explanation_service_status()
+
+
+@ai_router.post("/explain", response_model=ExplanationResponse)
+async def explain_model_prediction(request: ExplanationRequest):
+    """Generate a grounded, contextual explanation for model predictions and telemetry using OpenAI."""
+    return await generate_explanation(request)
