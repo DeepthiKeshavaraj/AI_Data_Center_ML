@@ -252,6 +252,7 @@ def auth_register(req: UserRegisterRequest, response: Response):
         status="success",
         message="Account created successfully. Welcome to AI Data Center Intelligence!",
         user=user,
+        token=session_token,
     )
 
 
@@ -263,6 +264,7 @@ def auth_login(req: UserLoginRequest, response: Response):
         status="success",
         message="Login successful.",
         user=user,
+        token=session_token,
     )
 
 

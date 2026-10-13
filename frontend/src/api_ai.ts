@@ -1,13 +1,17 @@
 // Isolated API client for AI Insights & Real ML capabilities
-import { buildApiUrl } from './api';
+import { buildApiUrl, getAuthToken } from './api';
 
 async function aiApiFetch<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
   const url = buildApiUrl(endpoint);
+  const token = getAuthToken();
+  const authHeaders: Record<string, string> = token ? { Authorization: `Bearer ${token}` } : {};
+
   const response = await fetch(url, {
     ...options,
     credentials: 'include',
     headers: {
       'Content-Type': 'application/json',
+      ...authHeaders,
       ...(options.headers || {}),
     },
   });

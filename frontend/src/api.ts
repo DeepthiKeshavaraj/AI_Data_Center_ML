@@ -69,16 +69,47 @@ export function buildApiUrl(endpoint: string): string {
   return `${base}${path}`;
 }
 
+// --- Token Management for Cross-Site Authentication Resilience ---
+
+export function setAuthToken(token: string | null | undefined) {
+  if (token) {
+    try {
+      localStorage.setItem('datacenter_auth_token', token);
+    } catch {
+      // Fallback if localStorage restricted
+    }
+  } else {
+    try {
+      localStorage.removeItem('datacenter_auth_token');
+    } catch {
+      // Ignore
+    }
+  }
+}
+
+export function getAuthToken(): string | null {
+  try {
+    return localStorage.getItem('datacenter_auth_token');
+  } catch {
+    return null;
+  }
+}
+
 /**
  * Common fetch helper ensuring credentials: 'include' for HttpOnly cookie sessions
+ * with fallback Authorization: Bearer header for cross-site cookie restrictions.
  */
 async function apiFetch(endpoint: string, options: RequestInit = {}) {
   const url = buildApiUrl(endpoint);
+  const token = getAuthToken();
+  const authHeaders: Record<string, string> = token ? { Authorization: `Bearer ${token}` } : {};
+
   const response = await fetch(url, {
     ...options,
     credentials: 'include',
     headers: {
       'Content-Type': 'application/json',
+      ...authHeaders,
       ...(options.headers || {}),
     },
   });
@@ -102,20 +133,28 @@ export async function registerUser(payload: {
   password: string;
   confirm_password: string;
 }): Promise<AuthResponse> {
-  return apiFetch('/auth/register', {
+  const res = await apiFetch('/auth/register', {
     method: 'POST',
     body: JSON.stringify(payload),
   });
+  if (res?.token) {
+    setAuthToken(res.token);
+  }
+  return res;
 }
 
 export async function loginUser(payload: {
   email: string;
   password: string;
 }): Promise<AuthResponse> {
-  return apiFetch('/auth/login', {
+  const res = await apiFetch('/auth/login', {
     method: 'POST',
     body: JSON.stringify(payload),
   });
+  if (res?.token) {
+    setAuthToken(res.token);
+  }
+  return res;
 }
 
 export async function fetchCurrentUser(): Promise<User> {
@@ -125,9 +164,13 @@ export async function fetchCurrentUser(): Promise<User> {
 }
 
 export async function logoutUser(): Promise<{ status: string; message: string }> {
-  return apiFetch('/auth/logout', {
-    method: 'POST',
-  });
+  try {
+    return await apiFetch('/auth/logout', {
+      method: 'POST',
+    });
+  } finally {
+    setAuthToken(null);
+  }
 }
 
 export async function fetchDbStatus(): Promise<DbStatusResponse> {

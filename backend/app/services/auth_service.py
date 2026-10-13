@@ -180,13 +180,23 @@ def invalidate_user_session(session_token: str):
         db.sessions.delete_one({"session_token": session_token})
 
 
+def is_production_environment() -> bool:
+    env = os.getenv("ENVIRONMENT", "").lower()
+    if env in ("production", "prod"):
+        return True
+    if env == "development":
+        return False
+    return (
+        os.getenv("RENDER") is not None
+        or os.getenv("PORT") is not None
+        or os.getenv("VERCEL") is not None
+    )
+
+
 def set_auth_cookie(response: Response, session_token: str):
     # In production or cross-site environments (Vercel -> Render),
     # SameSite must be 'none' and Secure must be True for cross-origin credentials
-    is_prod = (
-        os.getenv("ENVIRONMENT", "development").lower() in ("production", "prod")
-        or os.getenv("RENDER") is not None
-    )
+    is_prod = is_production_environment()
     response.set_cookie(
         key=COOKIE_NAME,
         value=session_token,
@@ -199,10 +209,7 @@ def set_auth_cookie(response: Response, session_token: str):
 
 
 def clear_auth_cookie(response: Response):
-    is_prod = (
-        os.getenv("ENVIRONMENT", "development").lower() in ("production", "prod")
-        or os.getenv("RENDER") is not None
-    )
+    is_prod = is_production_environment()
     response.delete_cookie(
         key=COOKIE_NAME,
         path="/",
