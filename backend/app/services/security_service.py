@@ -126,6 +126,18 @@ def predict_security(request: SecurityPredictRequest) -> SecurityPredictResponse
     )
 
 
+DEFAULT_FEATURE_IMPORTANCES: List[Dict[str, Any]] = [
+    {"original_feature": "flow_duration", "importance": 0.22715095308668276},
+    {"original_feature": "src_bytes", "importance": 0.19250270382551474},
+    {"original_feature": "dst_bytes", "importance": 0.13827541155100115},
+    {"original_feature": "connection_state", "importance": 0.12979554075456082},
+    {"original_feature": "dst_packets", "importance": 0.09648421478457654},
+    {"original_feature": "src_packets", "importance": 0.09388615540317641},
+    {"original_feature": "protocol", "importance": 0.06585081745581466},
+    {"original_feature": "service", "importance": 0.05605420313867294},
+]
+
+
 def get_security_metadata() -> SecurityMetadataResponse:
     # Read verified feature importances if present
     feature_importances: List[Dict[str, Any]] = []
@@ -136,6 +148,9 @@ def get_security_metadata() -> SecurityMetadataResponse:
             feature_importances = imp_df.to_dict(orient="records")
         except Exception:
             pass
+
+    if not feature_importances:
+        feature_importances = DEFAULT_FEATURE_IMPORTANCES
 
     # Read verified metrics if present
     metrics_summary: Dict[str, Any] = {

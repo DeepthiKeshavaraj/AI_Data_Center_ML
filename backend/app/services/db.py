@@ -57,8 +57,12 @@ def get_db():
             logger.info(f"Connecting to MongoDB Atlas (database: {db_name})...")
             client = pymongo.MongoClient(
                 sanitized_uri,
-                serverSelectionTimeoutMS=3000,
+                maxPoolSize=10,
+                minPoolSize=1,
+                maxIdleTimeMS=30000,
+                socketTimeoutMS=5000,
                 connectTimeoutMS=3000,
+                serverSelectionTimeoutMS=3000,
                 appname="ai_data_center_app",
             )
             # Verify connection with ping
