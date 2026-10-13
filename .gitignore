@@ -36,6 +36,7 @@ reports/
 # Model files
 *.pkl
 *.joblib
+!models/security/security_random_forest.joblib
 *.keras
 *.h5
 
