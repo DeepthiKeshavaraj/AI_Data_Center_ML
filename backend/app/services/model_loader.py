@@ -1,5 +1,7 @@
 from pathlib import Path
 import logging
+import threading
+import gc
 from typing import Dict, Any, Optional
 import joblib
 
@@ -49,52 +51,76 @@ class ModelRegistry:
         self._workload_error: Optional[str] = None
         self._thermal_error: Optional[str] = None
 
-        self.load_models()
+        self._lock = threading.Lock()
 
-    def load_models(self):
+        # Check artifact availability without allocating memory for model weights at startup
+        self.check_model_artifacts()
+
+    def check_model_artifacts(self):
+        """Verify artifact presence and set readiness status without loading large binary objects at startup."""
         # 1. Security Model
         if SECURITY_MODEL_PATH.exists():
-            try:
-                self._security_model = joblib.load(SECURITY_MODEL_PATH)
-                self._security_status = "loaded"
-                self._security_error = None
-                logger.info(f"Loaded security model from {SECURITY_MODEL_PATH}")
-            except Exception as e:
-                self._security_status = "failed"
-                self._security_error = f"Failed to load security model: {str(e)}"
-                logger.error(self._security_error)
+            self._security_status = "loaded"
+            self._security_error = None
         else:
             self._security_status = "unavailable"
             self._security_error = f"Artifact not found at {SECURITY_MODEL_PATH}"
 
         # 2. Workload Model
         if WORKLOAD_MODEL_PATH.exists():
-            try:
-                self._workload_model = joblib.load(WORKLOAD_MODEL_PATH)
-                self._workload_status = "loaded"
-                self._workload_error = None
-            except Exception as e:
-                self._workload_status = "failed"
-                self._workload_error = f"Failed to load workload model: {str(e)}"
+            self._workload_status = "loaded"
+            self._workload_error = None
         else:
             self._workload_status = "unavailable"
             self._workload_error = "Trained model artifact (cpu_prediction_random_forest.joblib) not found. Source metric dataset pending ingestion."
 
         # 3. Thermal Model
         if THERMAL_MODEL_PATH.exists():
-            try:
-                self._thermal_model = joblib.load(THERMAL_MODEL_PATH)
-                self._thermal_status = "loaded"
-                self._thermal_error = None
-            except Exception as e:
-                self._thermal_status = "failed"
-                self._thermal_error = f"Failed to load thermal model: {str(e)}"
+            self._thermal_status = "loaded"
+            self._thermal_error = None
         else:
             self._thermal_status = "unavailable"
             self._thermal_error = "Trained model artifact not found. Marconi A2 multi-GB sensor dataset pending ingestion."
 
+    def load_models(self):
+        """Compatibility trigger for explicit model loading."""
+        _ = self.security_model
+
+    def _load_security_model(self):
+        """Internal helper to load the security model into memory on demand."""
+        if not SECURITY_MODEL_PATH.exists():
+            self._security_status = "unavailable"
+            self._security_error = f"Artifact not found at {SECURITY_MODEL_PATH}"
+            return None
+
+        try:
+            logger.info(f"On-demand lazy loading security model from {SECURITY_MODEL_PATH}...")
+            gc.collect()
+            loaded = joblib.load(SECURITY_MODEL_PATH)
+            # Enforce single worker to avoid process duplication in 512MB container
+            if hasattr(loaded, "named_steps") and "classifier" in loaded.named_steps:
+                loaded.named_steps["classifier"].n_jobs = 1
+            elif hasattr(loaded, "n_jobs"):
+                loaded.n_jobs = 1
+
+            self._security_model = loaded
+            self._security_status = "loaded"
+            self._security_error = None
+            gc.collect()
+            logger.info("Security model successfully initialized in memory with n_jobs=1.")
+        except Exception as e:
+            self._security_status = "failed"
+            self._security_error = f"Failed to load security model: {str(e)}"
+            logger.error(self._security_error)
+            self._security_model = None
+
     @property
     def security_model(self):
+        """Thread-safe on-demand accessor for the security Random Forest model."""
+        if self._security_model is None and self._security_status == "loaded":
+            with self._lock:
+                if self._security_model is None:
+                    self._load_security_model()
         return self._security_model
 
     @property
