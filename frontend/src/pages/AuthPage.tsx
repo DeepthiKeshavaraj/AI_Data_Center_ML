@@ -13,7 +13,7 @@ import {
   Loader2,
   Zap,
 } from 'lucide-react';
-import { User as UserType } from '../types';
+import { User as UserType, DbStatusResponse } from '../types';
 import { registerUser, loginUser, fetchDbStatus } from '../api';
 
 interface AuthPageProps {
@@ -37,12 +37,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onAuthSuccess }) => {
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
   // Database status indicator
-  const [dbStatus, setDbStatus] = useState<{
-    connected: boolean;
-    is_mock: boolean;
-    engine: string;
-    database_name: string;
-  } | null>(null);
+  const [dbStatus, setDbStatus] = useState<DbStatusResponse | null>(null);
 
   useEffect(() => {
     fetchDbStatus()
@@ -317,6 +312,13 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onAuthSuccess }) => {
                 {dbStatus?.engine || 'MongoDB Atlas / PyMongo'}
               </span>
             </div>
+
+            {dbStatus?.details && (
+              <div className="rounded bg-amber-500/10 border border-amber-500/20 px-2.5 py-1.5 text-[10px] text-amber-300 flex items-start space-x-1.5">
+                <AlertTriangle className="w-3.5 h-3.5 shrink-0 mt-0.5 text-amber-400" />
+                <span>{dbStatus.details}</span>
+              </div>
+            )}
 
             <p className="text-[10px] text-slate-500 leading-relaxed m-0">
               Passphrases are salted and hashed using RFC 9106 Argon2id. Client authentication persists via server-validated HttpOnly session cookies.

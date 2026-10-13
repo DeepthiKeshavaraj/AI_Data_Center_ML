@@ -308,5 +308,6 @@ export interface DbStatusResponse {
   uri_configured: boolean;
   database_name: string;
   engine: string;
+  details?: string | null;
 }
 

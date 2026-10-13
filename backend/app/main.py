@@ -1,4 +1,21 @@
+import os
 import logging
+from pathlib import Path
+
+# Load environment variables from backend/.env or root .env
+try:
+    from dotenv import load_dotenv
+    _backend_env = Path(__file__).resolve().parent.parent / ".env"
+    _root_env = Path(__file__).resolve().parent.parent.parent / ".env"
+    if _backend_env.exists():
+        load_dotenv(_backend_env)
+    elif _root_env.exists():
+        load_dotenv(_root_env)
+    else:
+        load_dotenv()
+except ImportError:
+    pass
+
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
@@ -16,8 +33,6 @@ app = FastAPI(
     description="Operational ML backend integrating workload, thermal, and security models for AI data center management.",
     version="1.0.0",
 )
-
-import os
 # CORS configuration for frontend
 origins = [
     "http://localhost:5173",
